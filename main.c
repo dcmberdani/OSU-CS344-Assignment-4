@@ -27,8 +27,11 @@ int main(int argc, char *argv[])
 	//FILE *oStream = fopen(stdin, "w");
 	//fread(&currLine, &len, iStream);
 
-    	while ((nread = getline(&currLine, &len, stdin)) != -1)
+	while ((nread = getline(&currLine, &len, stdin)) != -1){
+		expandVars(currLine);
 		printf(currLine);
+	}
+	
 
 
 
