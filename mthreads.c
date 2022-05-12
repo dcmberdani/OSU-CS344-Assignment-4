@@ -13,14 +13,38 @@ void testPrint()
 	printf("Nothing broken in the file separation either\n");
 }
 
+//Reads in input from stdin; Mallocs a string to hold the new input
+char* getInput() {
+	char *currLine = malloc(sizeof(char) * MAX_IN_LEN);
+    	size_t len = 0;
+    	ssize_t nread;
 
-//Expands all instances of '$$' to the PID of the shell
-void expandVars(char* currStr) {
-	int counter = 0;
+	if ((nread = getline(&currLine, &len, stdin)) != -1) {
+		return currLine;
+	} else {
+		free(currLine);
+		return NULL;
+	}
 
+}
+
+//Replaces all '\n' instances with ' '
+//	To be used by thread 2
+void replaceLineSep(char* currStr){
+	char *idPtr;
+
+	//If an instance of '\n' is found, replace it;
+	//	No need for fancy movement since this is a one-char substitution
+	while ( idPtr = strstr(currStr, "\n") )
+		*idPtr = ' '; 
+}
+
+//Replaces all instances of '++' to '^'
+//	To be used by thread 3
+void replacePlus(char* currStr) {
 	char *pidStr;
 
-	char *rPtr, *idPtr, *out;
+	char *rPtr, *idPtr;
 
 	//If an instance of "++" is found, place it in 'idPtr'
 	while ( idPtr = strstr(currStr, "++") ) {

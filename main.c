@@ -19,18 +19,29 @@ int main(int argc, char *argv[])
 	printf("Nothing has broken horribly\n");
 	testPrint();
 
-	char *currLine = NULL;
-    	size_t len = 0;
-    	ssize_t nread;
+	char *test;
+	while (test = getInput()) {
+	printf("Printing Base Text: \n\t%s\n\n", test);
+
+	replaceLineSep(test);
+	printf("Without Separators: \n\t%s\n\n", test);
+
+	replacePlus(test);
+	printf("Plusses Replaces: \n\t%s\n\n", test);
+	}
+
+	//char *currLine = NULL;
+    	//size_t len = 0;
+    	//ssize_t nread;
 
 	//FILE *iStream = fopen(stdin, "r");
 	//FILE *oStream = fopen(stdin, "w");
 	//fread(&currLine, &len, iStream);
 
-	while ((nread = getline(&currLine, &len, stdin)) != -1){
-		expandVars(currLine);
-		printf(currLine);
-	}
+	//while ((nread = getline(&currLine, &len, stdin)) != -1){
+	//	expandVars(currLine);
+	//	printf(currLine);
+	//}
 	
 
 
