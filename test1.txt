@@ -1,2 +1,4 @@
 Line 1: This is a test case
 Line 2: Plusses++are++++everywhere+++
+Line 3: This is alright; NOW STOP
+

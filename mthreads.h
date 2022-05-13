@@ -23,10 +23,16 @@ struct inputInfo {
 //Grabs input from STDin
 char* getInput();
 
+//Checks if the str 'STOP\n' is present or not
+int foundStop(char* currStr);
+
+//Does all of the thread1 stuff
+void writeInputToBuffer(char *buf1);
 
 //Adapted from my function from smallsh
 void replaceLineSep(char* currStr);
-void replacePlus(char* currStr);
+char* replacePlus(char* currStr);
+//void replacePlus(char* currStr);
 
 
 
