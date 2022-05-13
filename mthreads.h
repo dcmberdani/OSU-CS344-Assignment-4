@@ -27,13 +27,16 @@ char* getInput();
 int foundStop(char* currStr);
 
 //Does all of the thread1 stuff
-void writeInputToBuffer(char *buf1);
+//void writeInputToBuffer(char *buf1);
+int writeInputToBuffer(char *buf1);
 
 //Adapted from my function from smallsh
-void replaceLineSep(char* currStr);
-char* replacePlus(char* currStr);
-//void replacePlus(char* currStr);
+void replaceLineSep(char *buf1, char *buf2);
+char* replacePlus(char *buf2, char *buf3);
 
+
+//Writes 80 chars to output at a time;
+void writeOutput(char* buf3);
 
 
 
