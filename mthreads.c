@@ -73,6 +73,7 @@ void freeProg()
 void testPrint()
 {
 	printf("Nothing broken in the file separation either\n");
+	fflush(stdout);
 }
 
 
@@ -103,7 +104,8 @@ int foundStop(char* currStr){
 	//getline reads until the \n terminator anyways
 	if ( strstr(currStr, " STOP\n") || strstr(currStr, "\nSTOP\n") ) 
 	//if ( strstr(currStr, "STOP\n") ) 
-		return 1;
+		//return 1;
+		return 0;
 	
 
 	return 0;
@@ -142,6 +144,7 @@ void *writeInputToBuffer() {
 			buf1_isfull = 1;
 
 			//printf("\tIN THREAD 1: \tPRINTING BUF1: %s\n", buf1);
+			//fflush(stdout);
 			
 			stop_t1 = foundStop(buf1);
 
@@ -155,6 +158,7 @@ void *writeInputToBuffer() {
 
 		//pthread_cond_signal(&buf1_cond);
 		//pthread_mutex_unlock(&buf1_mut);
+	//} while (stop_t1 == 0 || buf1_isfull == 0); //Wait until the buffer has been fully emptied AND stop is encountered to stop writing
 	} while (stop_t1 == 0);
 
 	stop_t2 = 1;
@@ -185,6 +189,9 @@ void *replaceLineSep(){
 
 		//Now empty out the buf1 array
 		//memset(buf1, '\0', MAX_IN_LEN);
+
+		//printf("\tIN THREAD 2: \tFLUSHED BUF1;\n");
+		//fflush(stdout);
 		memset(buf1, '\0', MAX_IN_LEN * MAX_IN_COUNT);
 		buf1_isfull = 0;
 
@@ -210,6 +217,7 @@ void *replaceLineSep(){
 
 		
 		//printf("\tIN THREAD 2: \tPRINTING BUF2: %s\n", buf2);
+		//fflush(stdout);
 
 		//printf("PRINTING SPACE REPLACED: %s\n", buf2);
 
@@ -218,6 +226,7 @@ void *replaceLineSep(){
 		//pthread_mutex_unlock(&buf1_mut);
 		
 
+	//} while (stop_t2 == 0 || buf1_isfull == 1);
 	} while (stop_t2 == 0);
 
 	//free(temp);
@@ -250,6 +259,9 @@ void *replacePlus() {
 		//strcpy(buf3, buf2);
 		buf3_isfull = 1;
 
+
+		//printf("\tIN THREAD 3: \tFLUSHED BUF2;\n");
+		//fflush(stdout);
 		//Now empty out the buf2 array
 		memset(buf2, '\0', MAX_IN_LEN * MAX_IN_COUNT);
 		//memset(buf2, '\0', MAX_IN_LEN);
@@ -289,11 +301,13 @@ void *replacePlus() {
 		//printf("PRINTING LIST INTO FINAL OUTPUT: %s\n", buf3);
 
 		//printf("\tIN THREAD 3: \tPRINTING BUF3: %s\n", buf3);
+		//fflush(stdout);
 		pthread_cond_signal(&buf3_cond);
 		pthread_mutex_unlock(&buf3_mut);
 
 
 	} while (stop_t3 == 0);
+	//} while (stop_t3 == 0 && buf1_isfull == 1);
 
 	stop_t4 = 1;
 }
@@ -319,11 +333,13 @@ void *writeOutput() {
 		//	Repeat for every instance of the string being above 80 chars
 		//
 		//printf("\tIN THREAD 4: \tPRINTING OUT: %s\n", buf3);
+		//fflush(stdout);
 		while (strlen(buf3) >= 80) {
 			printf("%.80s\n", buf3);
 			memmove(buf3, buf3+80, MAX_IN_LEN-80);
 		}
 
+	fflush(stdout);
 		buf3_isfull = 0;
 
 		pthread_mutex_unlock(&buf3_mut);
