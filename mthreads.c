@@ -27,7 +27,12 @@ pthread_mutex_t buf3_mut = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t buf3_cond = PTHREAD_COND_INITIALIZER;
 int buf3_isfull = 0;
 
-int stop_signal = 0;
+//int stop_signal = 0;
+//	Stop signal propogates down, allowing for one final cycle
+int stop_t1 = 0;
+int stop_t2 = 0;
+int stop_t3 = 0;
+int stop_t4 = 0;
 
 //Here's the initial allocation of buffers
 //	Global because idk how to pass stuff in with threads;
@@ -117,28 +122,36 @@ void *writeInputToBuffer() {
 	//	Then, when full, signal that buffer 1 has now gotten input
 	//pthread_mutex_lock(&buf1_mut);
 	do {
+		pthread_mutex_lock(&buf1_mut);
 		input = getInput();
+		//while (input = getInput()){
 		//while (input) {
 		if (input) {
-			pthread_mutex_lock(&buf1_mut);
+			//pthread_mutex_lock(&buf1_mut);
+
+			//if (buf1_isfull == 1)
+			//	pthread_cond_wait(&buf1_cond, &buf1_mut);
+
 			strcat(buf1, input);
 			buf1_isfull = 1;
 
-			printf("PRINTING INPUT BUFFER: %s\n", buf1);
+			//printf("PRINTING INPUT BUFFER: %s\n", buf1);
 			
-			stop_signal = foundStop(buf1);
+			stop_t1 = foundStop(buf1);
 
 
-			pthread_mutex_unlock(&buf1_mut);
+			//pthread_cond_signal(&buf1_cond);
+			//pthread_mutex_unlock(&buf1_mut);
 
-			pthread_cond_signal(&buf1_cond);
 
 			free(input);
-			//return 1;
 		}
-	} while (stop_signal == 0);
-	//return 0;
-	//}
+
+		pthread_cond_signal(&buf1_cond);
+		pthread_mutex_unlock(&buf1_mut);
+	} while (stop_t1 == 0);
+
+	stop_t2 = 1;
 }
 
 //Replaces all '\n' instances with ' '
@@ -147,21 +160,33 @@ void *writeInputToBuffer() {
 void *replaceLineSep(){
 //void replaceLineSep(){
 	//Lock mutex 1/2 and check if buf1 it has any data
+	char* temp = malloc(sizeof(char) * MAX_IN_LEN);
 	do {
+
 		pthread_mutex_lock(&buf1_mut);
 
 		while (buf1_isfull == 0)
 			pthread_cond_wait(&buf1_cond, &buf1_mut);
 
-		pthread_mutex_lock(&buf2_mut);
 
-
-		strcpy(buf2, buf1);
-		buf2_isfull = 1;
+		//Temp storage to prevent overlapping mutex
+		strcpy(temp, buf1);
 
 		//Now empty out the buf1 array
 		memset(buf1, '\0', MAX_IN_LEN);
 		buf1_isfull = 0;
+
+
+		//Signal to input thread that we are good to unlock
+		//pthread_cond_signal(&buf1_cond);
+		pthread_mutex_unlock(&buf1_mut);
+
+
+
+		pthread_mutex_lock(&buf2_mut);
+
+		strcpy(buf2, temp);
+		buf2_isfull = 1;
 
 		char *idPtr;
 
@@ -171,13 +196,18 @@ void *replaceLineSep(){
 			*idPtr = ' '; 
 
 
-		printf("PRINTING SPACE REPLACED: %s\n", buf2);
-
-		pthread_mutex_unlock(&buf2_mut);
-		pthread_mutex_unlock(&buf1_mut);
+		//printf("PRINTING SPACE REPLACED: %s\n", buf2);
 
 		pthread_cond_signal(&buf2_cond);
-	} while (stop_signal == 0);
+		pthread_mutex_unlock(&buf2_mut);
+		//pthread_mutex_unlock(&buf1_mut);
+		
+
+	} while (stop_t2 == 0);
+
+	free(temp);
+
+	stop_t3 = 1;
 }
 
 
@@ -187,8 +217,10 @@ void *replaceLineSep(){
 //void replacePlus() {
 void *replacePlus() {
 //char* replacePlus(char *buf2, char *buf3) {
-	char *newStr, *temp;
+	char *newStr, *temp2;
 	char *rPtr, *idPtr;
+
+	char* temp = malloc(sizeof(char) * MAX_IN_LEN);
 
 	do {
 		pthread_mutex_lock(&buf2_mut);
@@ -196,20 +228,24 @@ void *replacePlus() {
 		while (buf2_isfull == 0)
 			pthread_cond_wait(&buf2_cond, &buf2_mut);
 
-		pthread_mutex_lock(&buf3_mut);
-		
-
 		//Wait while buf2 is empty
 
-		//Copy buffer 2 into buffer 3
-		//	TRYING CAT NOW
-		//strcpy(buf3, buf2);
-		strcat(buf3, buf2);
-		buf3_isfull = 1;
+		//Copy buffer 2 into temp
+		strcpy(temp, buf2);
 
-		//Now empty out the buf1 array
+		//Now empty out the buf2 array
 		memset(buf2, '\0', MAX_IN_LEN);
 		buf2_isfull = 0;
+
+
+		pthread_mutex_unlock(&buf2_mut);
+
+
+
+		pthread_mutex_lock(&buf3_mut);
+
+		strcat(buf3, temp);
+		buf3_isfull = 1;
 
 		//If an instance of "++" is found, place it in 'idPtr'
 		while ( idPtr = strstr(buf3, "++") ) {
@@ -231,22 +267,24 @@ void *replacePlus() {
 
 				strcat(newStr, rPtr);
 
-				temp = buf3;
+				temp2 = buf3;
 				buf3 = newStr;
-				free(temp);
+				free(temp2);
 			}
 
 		}
 
-		printf("PRINTING LIST INTO FINAL OUTPUT: %s\n", buf3);
-
-		pthread_mutex_unlock(&buf3_mut);
-		pthread_mutex_unlock(&buf2_mut);
+		//printf("PRINTING LIST INTO FINAL OUTPUT: %s\n", buf3);
 
 		pthread_cond_signal(&buf3_cond);
+		pthread_mutex_unlock(&buf3_mut);
 
-	} while (stop_signal == 0);
-	//return buf3;
+
+	} while (stop_t3 == 0);
+
+	free(temp);
+
+	stop_t4 = 1;
 
 
 }
@@ -259,13 +297,13 @@ void *writeOutput() {
 	int buflen;
 
 	do {
-	pthread_mutex_lock(&buf3_mut);
+		pthread_mutex_lock(&buf3_mut);
 
 		while (buf3_isfull == 0)
 			pthread_cond_wait(&buf3_cond, &buf3_mut);
 
 		buflen = strlen(buf3);
-		printf("Length of Output: %d\n", buflen);
+		//printf("Length of Output: %d\n", buflen);
 
 		//If the buffer is long enough, then print out the first 80 chars
 		//	Afterwards, memmove the string back
@@ -274,7 +312,8 @@ void *writeOutput() {
 			printf("%.80s\n", buf3);
 			memmove(buf3, buf3+80, MAX_IN_LEN-80);
 		}
+
 		buf3_isfull = 0;
-	pthread_mutex_unlock(&buf3_mut);
-	} while (stop_signal == 0);
+		pthread_mutex_unlock(&buf3_mut);
+	} while (stop_t4 == 0);
 }
