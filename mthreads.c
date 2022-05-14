@@ -18,14 +18,17 @@ pthread_mutex_t buf1_mut = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t buf1_cond = PTHREAD_COND_INITIALIZER;
 // Variable to indicate that buffer 1 is not empty
 int buf1_isfull = 0;
+int buf1_isempty = 1;
 
 pthread_mutex_t buf2_mut = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t buf2_cond = PTHREAD_COND_INITIALIZER;
 int buf2_isfull = 0;
+int buf2_isempty = 1;
 
 pthread_mutex_t buf3_mut = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t buf3_cond = PTHREAD_COND_INITIALIZER;
 int buf3_isfull = 0;
+int buf3_isempty = 1;
 
 //int stop_signal = 0;
 //	Stop signal propogates down, allowing for one final cycle
@@ -84,28 +87,20 @@ char* getInput() {
 	int test;
 	//if ((nread = getline(&currLine, &len, stdin)) != -1) {
 	if (fgets(currLine, MAX_IN_LEN, stdin)) {
-		//strcat(currLine, "|"); //Concatenate a pipe to make sure we know the ending
-		//test = foundStop(currLine);
-		//printf("Stop found?: %d\n", test);
 		return currLine;
 	} else {
 		free(currLine);
 		return NULL;
 	}
 	
-
-
-	//if(foundStop(currLine))
-	//	printf("Found the terminating string; Need to process it now.\n");
-
 }
 
 int foundStop(char* currStr){
 	//getline reads until the \n terminator anyways
 	if ( strstr(currStr, " STOP\n") || strstr(currStr, "\nSTOP\n") ) 
 	//if ( strstr(currStr, "STOP\n") ) 
-		//return 1;
-		return 0;
+		//return 0;
+		return 1;
 	
 
 	return 0;
@@ -113,166 +108,190 @@ int foundStop(char* currStr){
 
 }
 
+void putBuf1(char* tempStr) {
+	pthread_mutex_lock(&buf1_mut);
+
+	strcat(buf1, tempStr);
+	//strcpy(buf1, tempStr);
+
+	buf1_isempty = 0;
+
+	pthread_cond_signal(&buf1_cond);
+	pthread_mutex_unlock(&buf1_mut);
+
+	//free(str);
+}
+
+
+
 //Grabs input, writes it to buffer 1
 //	Doesn't write to buffer if "STOP\n" is found
 //This handles basically all of the tasks of the first thread
 //Note: Buffer1 is assumed to be an empty string
 //	This string is allocated either globally or in main, and is only added to here; 
-//void writeInputToBuffer(char *buf1) {
 void *writeInputToBuffer() {
-//int writeInputToBuffer() {
-//int *writeInputToBuffer() {
-//int writeInputToBuffer(char *buf1) {
 	char* input;
 
+	int stopthis = 0;
 
 	//Now, we lock buffer 1 while we operate on iet
 	//	Then, when full, signal that buffer 1 has now gotten input
 	//pthread_mutex_lock(&buf1_mut);
-	do {
-		//pthread_mutex_lock(&buf1_mut);
+	//do {
+	//
+	for (int i = 0; i < 50; i++){
 		input = getInput();
-		//while (input = getInput()){
-		//while (input) {
 		if (input) {
-			pthread_mutex_lock(&buf1_mut);
-
-			//if (buf1_isfull == 1)
-			//	pthread_cond_wait(&buf1_cond, &buf1_mut);
-
-			strcat(buf1, input);
-			buf1_isfull = 1;
 
 			//printf("\tIN THREAD 1: \tPRINTING BUF1: %s\n", buf1);
 			//fflush(stdout);
+			//printf("Grabbed Input: %s\n", input);
 			
-			stop_t1 = foundStop(buf1);
+			stop_t1 = foundStop(input);
 
-
-			pthread_cond_signal(&buf1_cond);
-			pthread_mutex_unlock(&buf1_mut);
-
-
+			putBuf1(input);
 			free(input);
 		}
 
-		//pthread_cond_signal(&buf1_cond);
-		//pthread_mutex_unlock(&buf1_mut);
-	//} while (stop_t1 == 0 || buf1_isfull == 0); //Wait until the buffer has been fully emptied AND stop is encountered to stop writing
-	} while (stop_t1 == 0);
+		if (stop_t1) break;
+	}
+
+	//} while (stop_t1 == 0);
 
 	stop_t2 = 1;
+	printf("We've reached the end of thread 1;\n");
 }
 
+//Grabs info from buffer1 and then resets it
+char* getBuf1() {
+	char* tempStr = malloc(sizeof(char) * MAX_IN_LEN * MAX_IN_COUNT);
+
+	pthread_mutex_lock(&buf1_mut);
+
+	while (buf1_isempty == 1)
+		pthread_cond_wait(&buf1_cond, &buf1_mut);
+
+	strcpy(tempStr, buf1);
+
+	memset(buf1, '\0', MAX_IN_LEN * MAX_IN_COUNT);
+	buf1_isempty = 1;
+
+	pthread_mutex_unlock(&buf1_mut);
+
+	return tempStr;
+}
 //Replaces all '\n' instances with ' '
 //	To be used by thread 2
-//void replaceLineSep(char *buf1, char *buf2){
 void *replaceLineSep(){
-//void replaceLineSep(){
-	//Lock mutex 1/2 and check if buf1 it has any data
-	//char* temp = malloc(sizeof(char) * MAX_IN_LEN * MAX_IN_COUNT);
-	//char* temp = malloc(sizeof(char) * MAX_IN_LEN);
+	char* tempStr;
 	do {
-
-		pthread_mutex_lock(&buf1_mut);
-
-		while (buf1_isfull == 0)
-			pthread_cond_wait(&buf1_cond, &buf1_mut);
-
-
-
-		pthread_mutex_lock(&buf2_mut);
-
-		//
-		strcat(buf2, buf1);
-		buf2_isfull = 1;
-
-		//Now empty out the buf1 array
-		//memset(buf1, '\0', MAX_IN_LEN);
-
-		//printf("\tIN THREAD 2: \tFLUSHED BUF1;\n");
-		//fflush(stdout);
-		memset(buf1, '\0', MAX_IN_LEN * MAX_IN_COUNT);
-		buf1_isfull = 0;
-
-		pthread_mutex_unlock(&buf1_mut);
-
-
-		//Signal to input thread that we are good to unlock
-
-		//pthread_cond_signal(&buf1_cond);
-		//pthread_mutex_unlock(&buf1_mut);
+		//Store buf1 in a temporary buffer
+		//	Prevents overlapping of locks	
+		tempStr = getBuf1();
 
 
 		//pthread_mutex_lock(&buf2_mut);
 
-
+		//strcat(buf2, tempStr);
+		//buf2_isempty = 0;
+		//
+		//printf("\tIN THREAD 2: \tFLUSHED BUF1;\n");
+		//fflush(stdout);
 
 		char *idPtr;
-
 		//If an instance of '\n' is found, replace it;
 		//	No need for fancy movement since this is a one-char substitution
-		while ( idPtr = strstr(buf2, "\n") )
+		//while ( idPtr = strstr(buf2, "\n") )
+		while ( idPtr = strstr(tempStr, "\n") )
 			*idPtr = ' '; 
 
+		putBuf2(tempStr);
 		
 		//printf("\tIN THREAD 2: \tPRINTING BUF2: %s\n", buf2);
 		//fflush(stdout);
 
-		//printf("PRINTING SPACE REPLACED: %s\n", buf2);
+	//	pthread_cond_signal(&buf2_cond);
+		//pthread_mutex_unlock(&buf2_mut);
 
-		pthread_cond_signal(&buf2_cond);
-		pthread_mutex_unlock(&buf2_mut);
-		//pthread_mutex_unlock(&buf1_mut);
+		free(tempStr);
 		
-
-	//} while (stop_t2 == 0 || buf1_isfull == 1);
 	} while (stop_t2 == 0);
+	//} while (stop_t1 == 0);
 
-	//free(temp);
-
+	printf("We've reached the end of thread 2;\n");
 	stop_t3 = 1;
+}
+
+void putBuf2(char* tempStr) {
+	pthread_mutex_lock(&buf2_mut);
+
+	strcat(buf2, tempStr);
+	//strcpy(buf1, tempStr);
+
+	buf2_isempty = 0;
+
+	pthread_cond_signal(&buf2_cond);
+	pthread_mutex_unlock(&buf2_mut);
+}
+
+
+void putBuf3(char* tempStr) {
+	pthread_mutex_lock(&buf3_mut);
+
+	strcat(buf3, tempStr);
+	//strcpy(buf1, tempStr);
+
+	buf3_isempty = 0;
+
+	pthread_cond_signal(&buf3_cond);
+	pthread_mutex_unlock(&buf3_mut);
 }
 
 
 
+
+
+char* getBuf2() {
+	char* tempStr = malloc(sizeof(char) * MAX_IN_LEN * MAX_IN_COUNT);
+
+	pthread_mutex_lock(&buf2_mut);
+
+	while (buf2_isempty == 1)
+		pthread_cond_wait(&buf2_cond, &buf2_mut);
+
+	strcpy(tempStr, buf2);
+
+	memset(buf2, '\0', MAX_IN_LEN * MAX_IN_COUNT);
+	buf2_isempty = 1;
+
+	pthread_mutex_unlock(&buf2_mut);
+	
+	return tempStr;
+}
+
 //Replaces all instances of '++' to '^'
 //	To be used by thread 3
-//void replacePlus() {
 void *replacePlus() {
-//char* replacePlus(char *buf2, char *buf3) {
-	char *newStr, *temp2;
+	char *newStr, *temp2, *tempStr;
 	char *rPtr, *idPtr;
 
 	do {
-		pthread_mutex_lock(&buf2_mut);
 
-		while (buf2_isfull == 0)
-			pthread_cond_wait(&buf2_cond, &buf2_mut);
+		tempStr = getBuf2();
 
-
-		pthread_mutex_lock(&buf3_mut);
+		//pthread_mutex_lock(&buf3_mut);
 		//Wait while buf2 is empty
 
-		//Copy buffer 2 into temp
-		strcat(buf3, buf2);
-		//strcpy(buf3, buf2);
-		buf3_isfull = 1;
-
+		//Copy temp into buffer3
+		//strcat(buf3, tempStr);
+		//buf3_isempty = 0;
 
 		//printf("\tIN THREAD 3: \tFLUSHED BUF2;\n");
 		//fflush(stdout);
-		//Now empty out the buf2 array
-		memset(buf2, '\0', MAX_IN_LEN * MAX_IN_COUNT);
-		//memset(buf2, '\0', MAX_IN_LEN);
-		buf2_isfull = 0;
-
-
-		pthread_mutex_unlock(&buf2_mut);
-
 
 		//If an instance of "++" is found, place it in 'idPtr'
-		while ( idPtr = strstr(buf3, "++") ) {
+		//while ( idPtr = strstr(buf3, "++") ) {
+		while ( idPtr = strstr(tempStr, "++") ) {
 			rPtr = NULL;
 
 			//Right pointer is first value right of the '++'
@@ -287,34 +306,56 @@ void *replacePlus() {
 			//	This works since we've null-terminated the left side of the str
 			if (rPtr != NULL) {
 				newStr = malloc(sizeof(char) * MAX_IN_LEN * MAX_IN_COUNT);
-				strcpy(newStr, buf3);
+				//strcpy(newStr, buf3);
+				strcpy(newStr, tempStr);
 
 				strcat(newStr, rPtr);
 
-				temp2 = buf3;
-				buf3 = newStr;
+				//temp2 = buf3;
+				temp2 = tempStr;
+				//buf3 = newStr;
+				tempStr = newStr;
 				free(temp2);
 			}
 
 		}
 
-		//printf("PRINTING LIST INTO FINAL OUTPUT: %s\n", buf3);
-
 		//printf("\tIN THREAD 3: \tPRINTING BUF3: %s\n", buf3);
 		//fflush(stdout);
-		pthread_cond_signal(&buf3_cond);
-		pthread_mutex_unlock(&buf3_mut);
+		//pthread_cond_signal(&buf3_cond);
+		//pthread_mutex_unlock(&buf3_mut);
 
+		putBuf3(tempStr);
+		free(tempStr);
 
 	} while (stop_t3 == 0);
-	//} while (stop_t3 == 0 && buf1_isfull == 1);
-
+	printf("We've reached the end of thread 3;\n");
 	stop_t4 = 1;
 }
 
+
+char* getBuf3() {
+	char* tempStr = malloc(sizeof(char) * MAX_IN_LEN * MAX_IN_COUNT);
+
+	pthread_mutex_lock(&buf3_mut);
+
+	while (buf3_isempty == 1)
+		pthread_cond_wait(&buf3_cond, &buf3_mut);
+
+	strcpy(tempStr, buf3);
+
+	memset(buf3, '\0', MAX_IN_LEN * MAX_IN_COUNT);
+	buf3_isempty = 1;
+
+	pthread_mutex_unlock(&buf3_mut);
+	
+	return tempStr;
+}
+
+
+
 //Prints out 80 characters at a time from a given buffer
 //	To be used by thread 4
-//void writeOutput(char* buf3) {
 void *writeOutput() {
 	int counter;
 	int buflen;
@@ -322,11 +363,8 @@ void *writeOutput() {
 	do {
 		pthread_mutex_lock(&buf3_mut);
 
-		while (buf3_isfull == 0)
+		while (buf3_isempty == 1)
 			pthread_cond_wait(&buf3_cond, &buf3_mut);
-
-		buflen = strlen(buf3);
-		//printf("Length of Output: %d\n", buflen);
 
 		//If the buffer is long enough, then print out the first 80 chars
 		//	Afterwards, memmove the string back
@@ -336,13 +374,14 @@ void *writeOutput() {
 		//fflush(stdout);
 		while (strlen(buf3) >= 80) {
 			printf("%.80s\n", buf3);
+			fflush(stdout);
 			memmove(buf3, buf3+80, MAX_IN_LEN-80);
 		}
 
-	fflush(stdout);
-		buf3_isfull = 0;
+		buf3_isempty = 1;
 
 		pthread_mutex_unlock(&buf3_mut);
 
 	} while (stop_t4 == 0);
+	printf("We've reached the end of thread 4;\n");
 }

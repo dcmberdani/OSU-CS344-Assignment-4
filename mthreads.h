@@ -49,4 +49,13 @@ void *writeOutput();
 
 
 
+
+char* getBuf1();
+char* getBuf2();
+char* getBuf3();
+
+void putBuf1(char *tempStr);
+void putBuf3(char *tempStr);
+void putBuf2(char *tempStr);
+
 #endif
