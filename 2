@@ -141,7 +141,7 @@ void *writeInputToBuffer() {
 			strcat(buf1, input);
 			buf1_isfull = 1;
 
-			printf("\tIN THREAD 1: \tPRINTING BUF1: %s\n", buf1);
+			//printf("\tIN THREAD 1: \tPRINTING BUF1: %s\n", buf1);
 			
 			stop_t1 = foundStop(buf1);
 
@@ -167,7 +167,6 @@ void *replaceLineSep(){
 //void replaceLineSep(){
 	//Lock mutex 1/2 and check if buf1 it has any data
 	char* temp = malloc(sizeof(char) * MAX_IN_LEN * MAX_IN_COUNT);
-	//char* temp = malloc(sizeof(char) * MAX_IN_LEN);
 	do {
 
 		pthread_mutex_lock(&buf1_mut);
@@ -180,8 +179,7 @@ void *replaceLineSep(){
 		strcpy(temp, buf1);
 
 		//Now empty out the buf1 array
-		//memset(buf1, '\0', MAX_IN_LEN);
-		memset(buf1, '\0', MAX_IN_LEN * MAX_IN_COUNT);
+		memset(buf1, '\0', MAX_IN_LEN);
 		buf1_isfull = 0;
 
 
@@ -206,7 +204,7 @@ void *replaceLineSep(){
 			*idPtr = ' '; 
 
 		
-		printf("\tIN THREAD 2: \tPRINTING BUF2: %s\n", buf2);
+		//printf("\tIN THREAD 2: \tPRINTING BUF2: %s\n", buf2);
 
 		//printf("PRINTING SPACE REPLACED: %s\n", buf2);
 
@@ -233,7 +231,6 @@ void *replacePlus() {
 	char *rPtr, *idPtr;
 
 	char* temp = malloc(sizeof(char) * MAX_IN_LEN * MAX_IN_COUNT);
-	//char* temp = malloc(sizeof(char) * MAX_IN_LEN);
 
 	do {
 		pthread_mutex_lock(&buf2_mut);
@@ -247,8 +244,7 @@ void *replacePlus() {
 		strcpy(temp, buf2);
 
 		//Now empty out the buf2 array
-		memset(buf2, '\0', MAX_IN_LEN * MAX_IN_COUNT);
-		//memset(buf2, '\0', MAX_IN_LEN);
+		memset(buf2, '\0', MAX_IN_LEN);
 		buf2_isfull = 0;
 
 
@@ -290,7 +286,7 @@ void *replacePlus() {
 
 		//printf("PRINTING LIST INTO FINAL OUTPUT: %s\n", buf3);
 
-		printf("\tIN THREAD 3: \tPRINTING BUF3: %s\n", buf3);
+		//printf("\tIN THREAD 3: \tPRINTING BUF3: %s\n", buf3);
 		pthread_cond_signal(&buf3_cond);
 		pthread_mutex_unlock(&buf3_mut);
 
@@ -300,6 +296,8 @@ void *replacePlus() {
 	free(temp);
 
 	stop_t4 = 1;
+
+
 }
 
 //Prints out 80 characters at a time from a given buffer
@@ -322,7 +320,7 @@ void *writeOutput() {
 		//	Afterwards, memmove the string back
 		//	Repeat for every instance of the string being above 80 chars
 		//
-		printf("\tIN THREAD 4: \tPRINTING OUT: %s\n", buf3);
+		//printf("\tIN THREAD 4: \tPRINTING OUT: %s\n", buf3);
 		while (strlen(buf3) >= 80) {
 			printf("%.80s\n", buf3);
 			memmove(buf3, buf3+80, MAX_IN_LEN-80);
