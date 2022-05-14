@@ -1,4 +1,4 @@
-CC=gcc --std=gnu99 -g
+CC=gcc --std=gnu99 -g -pthread
 
 all: line_processor
 
