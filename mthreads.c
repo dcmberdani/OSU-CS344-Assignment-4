@@ -10,7 +10,6 @@
 
 #include "mthreads.h"
 
-
 //Here's my MUTEX stuff
 // Initialize the mutex for buffer 1
 pthread_mutex_t buf1_mut = PTHREAD_MUTEX_INITIALIZER;
@@ -19,6 +18,7 @@ pthread_cond_t buf1_cond = PTHREAD_COND_INITIALIZER;
 // Variable to indicate that buffer 1 is not empty
 int buf1_isempty = 1;
 
+//Repeat for the other buffers
 pthread_mutex_t buf2_mut = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t buf2_cond = PTHREAD_COND_INITIALIZER;
 int buf2_isempty = 1;
@@ -27,8 +27,7 @@ pthread_mutex_t buf3_mut = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t buf3_cond = PTHREAD_COND_INITIALIZER;
 int buf3_isempty = 1;
 
-//int stop_signal = 0;
-//	Stop signal propogates down, allowing for one final cycle
+//Stop signal propogates down, allowing for one final cycle
 int stop_t1 = 0;
 int stop_t2 = 0;
 int stop_t3 = 0;
@@ -80,7 +79,6 @@ void putBuf2(char* tempStr) {
 	pthread_mutex_lock(&buf2_mut);
 
 	strcat(buf2, tempStr);
-	//strcpy(buf1, tempStr);
 
 	buf2_isempty = 0;
 
@@ -91,9 +89,7 @@ void putBuf2(char* tempStr) {
 void putBuf3(char* tempStr) {
 	pthread_mutex_lock(&buf3_mut);
 
-	//if (stop_t3 == 0)
 	strcat(buf3, tempStr);
-	//strcpy(buf1, tempStr);
 
 	buf3_isempty = 0;
 
@@ -164,17 +160,8 @@ char* getBuf3() {
 //This is called in all threads
 int foundStop(char* currStr){
 	//getline reads until the \n terminator anyways
-	//if ( strstr(currStr, " STOP\n") || strstr(currStr, " STOP ") || strcmp(currStr, "STOP\n") == 0 ) 
-	//if ( strstr(currStr, " STOP\n")  || strcmp(currStr, "STOP\n") || strcmp(currStr, "STOP\0") == 0 ) 
-	//if ( strstr(currStr, " STOP\n")  || strstr(currStr, "\nSTOP\n") || strcmp(currStr, "STOP\n") || strcmp(currStr, "STOP\0") == 0 ) 
 	if ( strstr(currStr, " STOP\n")  || strstr(currStr, "\nSTOP\n") || strcmp(currStr, "STOP\n") == 0 ) 
-	//if ( strstr(currStr, " STOP\n") || strstr(currStr, "\nSTOP\n")  || strstr(currStr, "\nSTOP ") || strstr(currStr, " STOP ")) 
 		return 1;
-	//if ( strstr(currStr, " STOP\n") || strstr(currStr, "\nSTOP\n") ) 
-	//if ( strstr(currStr, "STOP\n") ) 
-		//return 0;
-	
-
 	return 0;
 }
 
@@ -190,7 +177,6 @@ int foundStop(char* currStr){
 char* getInput() {
 	char *currLine = malloc(sizeof(char) * MAX_IN_LEN);
 	int test;
-	//if ((nread = getline(&currLine, &len, stdin)) != -1) {
 	if (fgets(currLine, MAX_IN_LEN, stdin)) {
 		return currLine;
 	} else {
@@ -210,7 +196,6 @@ void *writeInputToBuffer() {
 	char* input;
 	//Now, we lock buffer 1 while we operate on iet
 	//	Then, when full, signal that buffer 1 has now gotten input
-	//for (int i = 0; i < 50; i++){
 	do {
 		input = getInput();
 
@@ -220,8 +205,6 @@ void *writeInputToBuffer() {
 		free(input);
 
 	} while (stop_t1 == 0);
-	//printf("Exited Thread 1;\n");
-	//}
 }
 
 
@@ -248,22 +231,18 @@ void *replaceLineSep(){
 		//If an instance of '\n' is found, replace it;
 		//	No need for fancy movement since this is a one-char substitution
 		while ( idPtr = strstr(tempStr, "\n") )
-		//while ( idPtr = strstr(tempStr, "\n") )
 			*idPtr = ' '; 
 
 		//Prevents corruption of the "STOP\n" message; Hacky but it works
 		if (stop_t2 == 1) 
-			strcat(tempStr, "STOP\n");
-		
-		
+			//strcat(tempStr, "STOP\n");
+			strcpy(tempStr + strlen(tempStr)-5, "STOP\n"); //Overwrite the last 5 bytes of the str with STOP\n
 
 		putBuf2(tempStr);
 		
 		free(tempStr);
 		
 	} while (stop_t2 == 0);
-
-	//printf("Exited Thread 2;\n");
 }
 
 
@@ -277,11 +256,11 @@ void *replaceLineSep(){
 //Replaces all instances of '++' to '^'
 //	To be used by thread 3
 void *replacePlus() {
-	char *newStr, *temp2, *tempStr;
-	char *rPtr, *idPtr;
+	char *tempStr; // Used to grab buffer
+	char *newStr, *temp2; // Used when operating on an existing 'rPtr'
+	char *rPtr, *idPtr; // Used to identify/located areas of a string
 
 	do {
-
 		tempStr = getBuf2();
 
 		stop_t3 = foundStop(tempStr);
@@ -316,8 +295,6 @@ void *replacePlus() {
 		free(tempStr);
 
 	} while (stop_t3 == 0);
-
-	//printf("Exited Thread 3;\n");
 }
 
 
@@ -331,9 +308,6 @@ void *replacePlus() {
 //Prints out 80 characters at a time from a given buffer
 //	To be used by thread 4
 void *writeOutput() {
-	int counter;
-	int buflen;
-
 	do {
 		pthread_mutex_lock(&buf3_mut);
 
@@ -357,6 +331,4 @@ void *writeOutput() {
 		pthread_mutex_unlock(&buf3_mut);
 
 	} while (stop_t4 == 0);
-
-	//printf("Exited Thread 4;\n");
 }

@@ -6,54 +6,113 @@
  * Description: 
  */
 
-void testPrint();
-
-/*
-struct inputInfo {
-	char* currInput;
-
-}
-*/
-
-//Useful Constants; Determine the size of things
+//Useful Constants; Determine the size of input
 #define MAX_IN_LEN 1000
 #define MAX_IN_COUNT 50
 
-
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 void initProg();
+
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 void freeProg();
 
 //Grabs input from STDin
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 char* getInput();
 
+
 //Checks if the str 'STOP\n' is present or not
-//int foundStop(char* currStr);
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 int foundStop(char* currStr);
 
+
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
+int foundStop(char* currStr);
+
+
 //Does all of the thread1 stuff
-//void writeInputToBuffer();
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 void *writeInputToBuffer();
-//int writeInputToBuffer(char *buf1);
+
 
 //Adapted from my function from smallsh
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 void *replaceLineSep();
-//void replaceLineSep(char *buf1, char *buf2);
+
+
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 void *replacePlus();
-//void replacePlus(char *buf2, char *buf3);
-//char* replacePlus(char *buf2, char *buf3);
 
 
 //Writes 80 chars to output at a time;
-//void writeOutput(char* buf3);
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 void *writeOutput();
 
 
 
 
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 char* getBuf1();
 char* getBuf2();
 char* getBuf3();
 
+
+/*
+ * Name: 
+ * Description: 
+ * Preconditions: 
+ * Postconditions: 
+ */
 void putBuf1(char *tempStr);
 void putBuf3(char *tempStr);
 void putBuf2(char *tempStr);
