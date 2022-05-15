@@ -164,7 +164,10 @@ char* getBuf3() {
 //This is called in all threads
 int foundStop(char* currStr){
 	//getline reads until the \n terminator anyways
-	if ( strstr(currStr, " STOP\n") || strstr(currStr, " STOP ") || strcmp(currStr, "STOP\n") == 0 ) 
+	//if ( strstr(currStr, " STOP\n") || strstr(currStr, " STOP ") || strcmp(currStr, "STOP\n") == 0 ) 
+	//if ( strstr(currStr, " STOP\n")  || strcmp(currStr, "STOP\n") || strcmp(currStr, "STOP\0") == 0 ) 
+	//if ( strstr(currStr, " STOP\n")  || strstr(currStr, "\nSTOP\n") || strcmp(currStr, "STOP\n") || strcmp(currStr, "STOP\0") == 0 ) 
+	if ( strstr(currStr, " STOP\n")  || strstr(currStr, "\nSTOP\n") || strcmp(currStr, "STOP\n") == 0 ) 
 	//if ( strstr(currStr, " STOP\n") || strstr(currStr, "\nSTOP\n")  || strstr(currStr, "\nSTOP ") || strstr(currStr, " STOP ")) 
 		return 1;
 	//if ( strstr(currStr, " STOP\n") || strstr(currStr, "\nSTOP\n") ) 
@@ -210,22 +213,14 @@ void *writeInputToBuffer() {
 	//for (int i = 0; i < 50; i++){
 	do {
 		input = getInput();
-		//if (input = getInput()) {
-			stop_t1 = foundStop(input);
-			//printf("\tCurrent Input: %s\t Current foundStop: %d\n", input, stop_t1);
-			
 
-			if (stop_t1 == 1) 
-				strcpy(input, "\0");
-				
+		stop_t1 = foundStop(input);
 
-			putBuf1(input);
-			free(input);
-		//}
-		//if (stop_t1) break;
+		putBuf1(input);
+		free(input);
 
 	} while (stop_t1 == 0);
-	printf("Exited Thread 1;\n");
+	//printf("Exited Thread 1;\n");
 	//}
 }
 
@@ -240,7 +235,7 @@ void *writeInputToBuffer() {
 //Replaces all '\n' instances with ' '
 //	To be used by thread 2
 void *replaceLineSep(){
-	char* tempStr;
+	char *tempStr;
 	do {
 		//Store buf1 in a temporary buffer
 		//	Prevents overlapping of locks	
@@ -253,7 +248,14 @@ void *replaceLineSep(){
 		//If an instance of '\n' is found, replace it;
 		//	No need for fancy movement since this is a one-char substitution
 		while ( idPtr = strstr(tempStr, "\n") )
+		//while ( idPtr = strstr(tempStr, "\n") )
 			*idPtr = ' '; 
+
+		//Prevents corruption of the "STOP\n" message; Hacky but it works
+		if (stop_t2 == 1) 
+			strcat(tempStr, "STOP\n");
+		
+		
 
 		putBuf2(tempStr);
 		
@@ -261,7 +263,7 @@ void *replaceLineSep(){
 		
 	} while (stop_t2 == 0);
 
-	printf("Exited Thread 2;\n");
+	//printf("Exited Thread 2;\n");
 }
 
 
@@ -315,7 +317,7 @@ void *replacePlus() {
 
 	} while (stop_t3 == 0);
 
-	printf("Exited Thread 3;\n");
+	//printf("Exited Thread 3;\n");
 }
 
 
@@ -356,5 +358,5 @@ void *writeOutput() {
 
 	} while (stop_t4 == 0);
 
-	printf("Exited Thread 4;\n");
+	//printf("Exited Thread 4;\n");
 }
