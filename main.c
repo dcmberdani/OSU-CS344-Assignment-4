@@ -13,50 +13,6 @@
 
 int main(int argc, char *argv[])
 {	
-	/*
-	char* buf1 = malloc(sizeof(char) * MAX_IN_LEN);	
-	char* buf2 = malloc(sizeof(char) * MAX_IN_LEN);	
-	char* buf3 = malloc(sizeof(char) * MAX_IN_LEN);	
-	*/
-
-	/*
-	printf("Nothing has broken horribly\n");
-	testPrint();
-
-
-	//while (writeInputToBuffer(buf1)){
-	while (writeInputToBuffer()){
-	//writeInputToBuffer(buf1);
-	printf("First, we print the base input:\n");
-	//printf("%s\n", buf1);
-
-
-	printf("Now we remove line separators:\n");
-	replaceLineSep();
-	//replaceLineSep(buf1, buf2);
-	//printf("%s\n", buf2);
-
-	printf("Now with plusses replaced:\n");
-	//replacePlus(buf2, buf3);
-	replacePlus();
-	//printf("%s\n", buf3);
-
-
-	printf("Now test if output is written:\n");
-	//writeOutput(buf3);
-	writeOutput();
-	printf("\n\n\n\n\n");
-
-
-	}
-	*/
-
-	/*
-	free(buf1);
-	free(buf2);
-	free(buf3);
-	*/
-
 	initProg();
 	
 	pthread_t input_t, sep_t, plus_t, output_t;
