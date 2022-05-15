@@ -11,5 +11,6 @@ COMPILING:
 
 EXECUTING/CLEANUP:
 	The program is executed by typing './line_processor'
+	Since input is read from stdin, the program may also be executed with './line_processor < inputfile.txt' 
 
 	In order to remove the executable/object files from the directory, type 'make clean'
