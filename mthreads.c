@@ -97,7 +97,8 @@ char* getInput() {
 
 int foundStop(char* currStr){
 	//getline reads until the \n terminator anyways
-	if ( strstr(currStr, " STOP\n") || strstr(currStr, "\nSTOP\n") ) 
+	if ( strstr(currStr, " STOP\n") || strstr(currStr, "\nSTOP\n")  || strstr(currStr, "\nSTOP ") || strstr(currStr, " STOP ")) 
+	//if ( strstr(currStr, " STOP\n") || strstr(currStr, "\nSTOP\n") ) 
 	//if ( strstr(currStr, "STOP\n") ) 
 		//return 0;
 		return 1;
@@ -132,8 +133,6 @@ void putBuf1(char* tempStr) {
 void *writeInputToBuffer() {
 	char* input;
 
-	int stopthis = 0;
-
 	//Now, we lock buffer 1 while we operate on iet
 	//	Then, when full, signal that buffer 1 has now gotten input
 	//pthread_mutex_lock(&buf1_mut);
@@ -158,8 +157,8 @@ void *writeInputToBuffer() {
 
 	//} while (stop_t1 == 0);
 
-	stop_t2 = 1;
-	printf("We've reached the end of thread 1;\n");
+	//stop_t2 = 1;
+	//printf("We've reached the end of thread 1;\n");
 }
 
 //Grabs info from buffer1 and then resets it
@@ -185,11 +184,14 @@ char* getBuf1() {
 void *replaceLineSep(){
 	char* tempStr;
 	do {
+
+
 		//Store buf1 in a temporary buffer
 		//	Prevents overlapping of locks	
 		tempStr = getBuf1();
 
 
+		stop_t2 = foundStop(tempStr);
 		//pthread_mutex_lock(&buf2_mut);
 
 		//strcat(buf2, tempStr);
@@ -218,8 +220,8 @@ void *replaceLineSep(){
 	} while (stop_t2 == 0);
 	//} while (stop_t1 == 0);
 
-	printf("We've reached the end of thread 2;\n");
-	stop_t3 = 1;
+	//printf("We've reached the end of thread 2;\n");
+	//stop_t3 = 1;
 }
 
 void putBuf2(char* tempStr) {
@@ -279,6 +281,7 @@ void *replacePlus() {
 
 		tempStr = getBuf2();
 
+		stop_t3 = foundStop(tempStr);
 		//pthread_mutex_lock(&buf3_mut);
 		//Wait while buf2 is empty
 
@@ -329,8 +332,8 @@ void *replacePlus() {
 		free(tempStr);
 
 	} while (stop_t3 == 0);
-	printf("We've reached the end of thread 3;\n");
-	stop_t4 = 1;
+	//printf("We've reached the end of thread 3;\n");
+	//stop_t4 = 1;
 }
 
 
@@ -361,11 +364,14 @@ void *writeOutput() {
 	int buflen;
 
 	do {
+		if (stop_t3 == 1) stop_t4 = 1;
 		pthread_mutex_lock(&buf3_mut);
 
 		while (buf3_isempty == 1)
 			pthread_cond_wait(&buf3_cond, &buf3_mut);
 
+
+		stop_t4 = foundStop(buf3);
 		//If the buffer is long enough, then print out the first 80 chars
 		//	Afterwards, memmove the string back
 		//	Repeat for every instance of the string being above 80 chars
@@ -383,5 +389,5 @@ void *writeOutput() {
 		pthread_mutex_unlock(&buf3_mut);
 
 	} while (stop_t4 == 0);
-	printf("We've reached the end of thread 4;\n");
+	//printf("We've reached the end of thread 4;\n");
 }
